@@ -242,6 +242,7 @@ header p {
 .form {
     display: flex;
     gap: 3px;
+    align-items: center;
 }
 
 .form-badge {

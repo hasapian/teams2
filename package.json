@@ -4,9 +4,7 @@
   "description": "Football teams without draws tracker",
   "main": "index.js",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'Build complete'",
-    "start": "vercel dev"
+    "build": "echo 'Build complete'"
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",

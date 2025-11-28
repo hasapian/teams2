@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teams Without Draws</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚽ Teams Without Draws Tracker</h1>
+            <p>Find teams with consecutive games without a draw</p>
+        </header>
+
+        <div class="search-box">
+            <form id="searchForm">
+                <div class="form-group">
+                    <label for="league">League:</label>
+                    <select id="league" name="league" required>
+                        <option value="all">All Leagues</option>
+                        <option value="Super League">Greece - Super League</option>
+                        <option value="Premier League">England - Premier League</option>
+                        <option value="La Liga">Spain - La Liga</option>
+                        <option value="Serie A">Italy - Serie A</option>
+                        <option value="Bundesliga">Germany - Bundesliga</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="minGames">Minimum games without draw:</label>
+                    <input type="number" id="minGames" name="minGames" min="1" value="6" required>
+                </div>
+
+                <button type="submit" class="btn-search">Search</button>
+            </form>
+        </div>
+
+        <div id="results" class="results">
+            <h2>Results</h2>
+            <div id="resultsContent">
+                <p class="placeholder">Select a league and minimum games to see results</p>
+            </div>
+        </div>
+
+        <div class="refresh-section">
+            <h3>Refresh League Data</h3>
+            <div class="league-checkboxes">
+                <label class="checkbox-label">
+                    <input type="checkbox" class="league-checkbox" value="Super League" checked> Greece
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" class="league-checkbox" value="Premier League" checked> England
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" class="league-checkbox" value="La Liga" checked> Spain
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" class="league-checkbox" value="Serie A" checked> Italy
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" class="league-checkbox" value="Bundesliga" checked> Germany
+                </label>
+            </div>
+            <button id="refreshBtn" class="btn-refresh" title="Refresh data from website">🔄 Refresh Data</button>
+        </div>
+    </div>
+
+    <script>
+        // Refresh data button handler
+        document.getElementById('refreshBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('refreshBtn');
+            const checkboxes = document.querySelectorAll('.league-checkbox:checked');
+            const selectedLeagues = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (selectedLeagues.length === 0) {
+                alert('Please select at least one league to refresh');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Refreshing...';
+            
+            try {
+                const response = await fetch('/api/refresh', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ leagues: selectedLeagues })
+                });
+                const data = await response.json();
+                
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Refresh Data';
+                    alert(`Data refresh completed for ${selectedLeagues.length} league(s)!`);
+                }, 2000);
+            } catch (error) {
+                btn.disabled = false;
+                btn.textContent = '🔄 Refresh Data';
+                alert('Error refreshing data. Please try again.');
+                console.error('Refresh error:', error);
+            }
+        });
+
+        // Search form handler
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const league = document.getElementById('league').value;
+            const minGames = document.getElementById('minGames').value;
+            
+            const resultsContent = document.getElementById('resultsContent');
+            resultsContent.innerHTML = '<p class="loading">Loading...</p>';
+            
+            try {
+                const response = await fetch(`/api/teams?league=${league}&minGames=${minGames}`);
+                const data = await response.json();
+                
+                if (data.teams && data.teams.length > 0) {
+                    let html = '<table class="results-table">';
+                    html += '<thead><tr><th>Position</th><th>Team</th><th>League</th><th>Form</th><th>Streak</th><th>Record</th></tr></thead>';
+                    html += '<tbody>';
+                    
+                    data.teams.forEach(team => {
+                        html += `<tr>
+                            <td>${team.position}</td>
+                            <td class="team-name">${team.name}</td>
+                            <td class="league-badge">${team.country}</td>
+                            <td class="form">${formatForm(team.form)}</td>
+                            <td class="streak">${team.no_draw_streak} games</td>
+                            <td>${team.wins}W-${team.draws}D-${team.losses}L</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table>';
+                    resultsContent.innerHTML = html;
+                } else {
+                    resultsContent.innerHTML = '<p class="no-results">No teams found with the specified criteria</p>';
+                }
+            } catch (error) {
+                resultsContent.innerHTML = '<p class="error">Error loading results. Please try again.</p>';
+                console.error('Error:', error);
+            }
+        });
+        
+        function formatForm(form) {
+            if (!form) return '-';
+            return form.split('').map(result => {
+                const className = result === 'W' ? 'win' : result === 'D' ? 'draw' : 'loss';
+                return `<span class="form-badge ${className}">${result}</span>`;
+            }).join('');
+        }
+    </script>
+</body>
+</html>

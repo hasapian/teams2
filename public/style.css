@@ -211,7 +211,7 @@ header p {
 }
 
 .results-table td {
-    padding: 15px;
+    padding: 20px 15px;
     border-bottom: 1px solid #e0e0e0;
 }
 
@@ -242,7 +242,6 @@ header p {
 .form {
     display: flex;
     gap: 3px;
-    flex-wrap: wrap;
 }
 
 .form-badge {

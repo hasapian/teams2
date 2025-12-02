@@ -62,18 +62,59 @@ pipeline {
                 script {
                     echo "🔔 Sending notification for match tomorrow!"
                     
+                    // Capture match details from console output
+                    def consoleLog = currentBuild.rawBuild.getLog(100).join('\n')
+                    def matchLine = (consoleLog =~ /Match:\s+(.+)/)
+                    def dateLine = (consoleLog =~ /Date:\s+(.+)/)
+                    def timeLine = (consoleLog =~ /Time:\s+(.+)/)
+                    
+                    def matchDetails = matchLine ? matchLine[0][1] : 'See build log'
+                    def matchDate = dateLine ? dateLine[0][1] : ''
+                    def matchTime = timeLine ? timeLine[0][1] : ''
+                    
                     if (params.NOTIFICATION_EMAIL) {
                         // Email notification (requires Email Extension Plugin)
                         emailext (
                             subject: "⚽ Match Alert: ${params.TEAM_NAME} plays tomorrow!",
                             body: """
-                                <h2>Match Tomorrow!</h2>
-                                <p>Your team <strong>${params.TEAM_NAME}</strong> has a match tomorrow.</p>
-                                <p>Check the details in the build console output.</p>
-                                <p><a href="${BUILD_URL}console">View Build Log</a></p>
+                                <html>
+                                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                                    <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4;">
+                                        <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                                            <h2 style="color: #2c5f2d; margin-top: 0;">⚽ Match Tomorrow!</h2>
+                                            
+                                            <p style="font-size: 16px;">Your team <strong style="color: #2c5f2d;">${params.TEAM_NAME}</strong> has a match tomorrow.</p>
+                                            
+                                            <div style="background-color: #f8f9fa; padding: 20px; border-left: 4px solid #2c5f2d; margin: 20px 0;">
+                                                <h3 style="margin-top: 0; color: #2c5f2d;">Match Details</h3>
+                                                <p style="margin: 5px 0;"><strong>Teams:</strong> ${matchDetails}</p>
+                                                <p style="margin: 5px 0;"><strong>Date:</strong> ${matchDate}</p>
+                                                <p style="margin: 5px 0;"><strong>Time:</strong> ${matchTime}</p>
+                                            </div>
+                                            
+                                            <p style="text-align: center; margin-top: 30px;">
+                                                <a href="${BUILD_URL}console" 
+                                                   style="display: inline-block; padding: 12px 30px; background-color: #2c5f2d; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                                                    View Full Details
+                                                </a>
+                                            </p>
+                                            
+                                            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+                                            
+                                            <p style="font-size: 12px; color: #666; text-align: center;">
+                                                This is an automated notification from your match tracking system.<br>
+                                                Build #${BUILD_NUMBER} - ${new Date().format('yyyy-MM-dd HH:mm:ss')}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </body>
+                                </html>
                             """,
                             to: params.NOTIFICATION_EMAIL,
-                            mimeType: 'text/html'
+                            mimeType: 'text/html',
+                            recipientProviders: [[$class: 'DevelopersRecipientProvider']],
+                            replyTo: '$DEFAULT_REPLYTO',
+                            from: 'jenkins@yourdomain.com'  // Change this to your Jenkins email
                         )
                         echo "📧 Email sent to: ${params.NOTIFICATION_EMAIL}"
                     } else {

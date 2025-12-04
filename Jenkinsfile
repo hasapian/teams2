@@ -28,8 +28,9 @@ pipeline {
                 sh 'node --version'
                 sh 'npm --version'
                 
-                // Configure npm for proxy and install dependencies
+                // Clean and install dependencies
                 sh '''
+                    rm -rf node_modules package-lock.json
                     npm config set strict-ssl false
                     npm config set registry https://registry.npmjs.org/
                     npm install --no-audit --no-fund

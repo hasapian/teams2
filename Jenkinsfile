@@ -80,13 +80,29 @@ pipeline {
                     
                     // Capture match details from console output
                     def consoleLog = currentBuild.rawBuild.getLog(100).join('\n')
-                    def matchLine = (consoleLog =~ /Match:\s+(.+)/)
-                    def dateLine = (consoleLog =~ /Date:\s+(.+)/)
-                    def timeLine = (consoleLog =~ /Time:\s+(.+)/)
                     
-                    def matchDetails = matchLine ? matchLine[0][1] : 'See build log'
-                    def matchDate = dateLine ? dateLine[0][1] : ''
-                    def matchTime = timeLine ? timeLine[0][1] : ''
+                    // Extract match details using find() to avoid non-serializable Matcher
+                    def matchDetails = 'See build log'
+                    def matchDate = ''
+                    def matchTime = ''
+                    
+                    def matchMatch = (consoleLog =~ /Match:\s+(.+)/)
+                    if (matchMatch.find()) {
+                        matchDetails = matchMatch.group(1)
+                    }
+                    matchMatch = null
+                    
+                    def dateMatch = (consoleLog =~ /Date:\s+(.+)/)
+                    if (dateMatch.find()) {
+                        matchDate = dateMatch.group(1)
+                    }
+                    dateMatch = null
+                    
+                    def timeMatch = (consoleLog =~ /Time:\s+(.+)/)
+                    if (timeMatch.find()) {
+                        matchTime = timeMatch.group(1)
+                    }
+                    timeMatch = null
                     
                     if (params.NOTIFICATION_EMAIL) {
                         // Email notification (requires Email Extension Plugin)

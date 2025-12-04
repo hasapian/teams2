@@ -143,7 +143,8 @@ pipeline {
                                 </html>
                             """,
                             to: params.NOTIFICATION_EMAIL,
-                            mimeType: 'text/html'
+                            mimeType: 'text/html',
+                            from: 'spiderman8787@gmail.com'
                         )
                         echo "📧 Email sent to: ${params.NOTIFICATION_EMAIL}"
                     } else {

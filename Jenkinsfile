@@ -4,6 +4,10 @@
 pipeline {
     agent any
     
+    tools {
+        nodejs 'NodeJS'  // Requires NodeJS plugin and configured tool in Jenkins
+    }
+    
     parameters {
         string(name: 'TEAM_NAME', defaultValue: 'Volos', description: 'Name of the team to check')
         string(name: 'NOTIFICATION_EMAIL', defaultValue: '', description: 'Email address for notifications (optional)')
@@ -19,6 +23,11 @@ pipeline {
             steps {
                 echo "Checking next match for: ${params.TEAM_NAME}"
                 echo "Current date: ${new Date()}"
+                
+                // Verify Node.js is available and install dependencies
+                sh 'node --version'
+                sh 'npm --version'
+                sh 'npm install'
             }
         }
         

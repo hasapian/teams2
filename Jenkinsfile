@@ -27,7 +27,8 @@ pipeline {
                 // Verify Node.js is available and install dependencies
                 sh 'node --version'
                 sh 'npm --version'
-                sh 'npm install'
+                sh 'npm cache clean --force'
+                sh 'npm install --no-audit --no-fund'
             }
         }
         

@@ -10,6 +10,7 @@ A serverless web application that tracks football teams with consecutive games w
 - 💨 10-minute caching for fast responses
 - 📱 Mobile-responsive design
 - ☁️ Serverless deployment on Vercel
+- 🔔 **NEW:** Automated match notifications via Jenkins cron jobs
 
 ## Tech Stack
 
@@ -48,6 +49,50 @@ Or connect your GitHub repo to Vercel for automatic deployments.
 2. API scrapes data from soccerstats.com (if not cached)
 3. Data is cached for 10 minutes in memory
 4. Results are filtered and returned to the frontend
+
+## Match Notifications (POC)
+
+Automated daily checks for upcoming matches using Jenkins cron jobs.
+
+### Quick Start
+
+```bash
+# Check next match for a team
+node scripts/check-next-match.js Volos
+
+# Returns exit code:
+# 0 = Match tomorrow (send notification)
+# 1 = Match found but not tomorrow
+# 2 = No upcoming match found
+```
+
+### Jenkins Setup
+
+See [Jenkins Setup Guide](docs/JENKINS_SETUP.md) for complete instructions.
+
+**TL;DR:**
+1. Create Jenkins freestyle job
+2. Add parameter: `TEAM_NAME` (default: `Volos`)
+3. Set schedule: `0 10 * * *` (daily at 10 AM)
+4. Execute: `node scripts/check-next-match.js "%TEAM_NAME%"`
+5. Configure notification method (email/Slack/webhook)
+
+## Project Structure
+
+```
+teams2/
+├── api/              # Vercel serverless functions
+├── lib/              # Shared utilities
+├── public/           # Frontend files
+├── scripts/          # Automation scripts
+│   ├── check-next-match.js    # Match checker
+│   ├── jenkins-check.bat      # Windows wrapper
+│   └── jenkins-check.sh       # Linux wrapper
+├── docs/             # Documentation
+│   └── JENKINS_SETUP.md       # Jenkins guide
+├── Jenkinsfile       # Pipeline configuration
+└── README.md
+```
 5. Refresh button allows manual cache invalidation
 
 ## API Endpoints

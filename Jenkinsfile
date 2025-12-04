@@ -104,41 +104,39 @@ pipeline {
                     }
                     timeMatch = null
                     
-                    if (params.NOTIFICATION_EMAIL) {
-                        echo "Preparing to send email..."
-                        echo "To: ${params.NOTIFICATION_EMAIL}"
-                        echo "Subject: ⚽ Match Alert: ${params.TEAM_NAME} plays tomorrow!"
-                        echo "Match Details: ${matchDetails}"
-                        echo "Date: ${matchDate}, Time: ${matchTime}"
-                        
-                        try {
-                            // Try simple mail step first
-                            mail (
-                                to: params.NOTIFICATION_EMAIL,
-                                subject: "⚽ Match Alert: ${params.TEAM_NAME} plays tomorrow!",
-                                body: """
-Match Tomorrow!
+                    // Set default email if not provided
+                    def emailTo = params.NOTIFICATION_EMAIL ?: 'spiderman8787@gmail.com'
+                    
+                    echo "Preparing to send email..."
+                    echo "To: ${emailTo}"
+                    echo "Subject: ⚽ Match Alert: ${params.TEAM_NAME} plays tomorrow!"
+                    echo "Match Details: ${matchDetails}"
+                    echo "Date: ${matchDate}, Time: ${matchTime}"
+                    
+                    try {
+                        mail (
+                            to: emailTo,
+                            subject: "⚽ Match Alert: ${params.TEAM_NAME} plays tomorrow!",
+                            body: """
+                            Match Tomorrow!
 
-Your team ${params.TEAM_NAME} has a match tomorrow.
+                            Your team ${params.TEAM_NAME} has a match tomorrow.
 
-Match Details:
-Teams: ${matchDetails}
-Date: ${matchDate}
-Time: ${matchTime}
+                            Match Details:
+                            Teams: ${matchDetails}
+                            Date: ${matchDate}
+                            Time: ${matchTime}
 
-View full details: ${BUILD_URL}console
+                            View full details: ${BUILD_URL}console
 
-This is an automated notification from your match tracking system.
-Build #${BUILD_NUMBER}
-                                """
-                            )
-                            echo "📧 Email sent successfully to: ${params.NOTIFICATION_EMAIL}"
-                        } catch (Exception e) {
-                            echo "❌ Email failed: ${e.message}"
-                            echo "Stack trace: ${e}"
-                        }
-                    } else {
-                        echo "⚠️ No email address configured"
+                            This is an automated notification from your match tracking system.
+                            Build #${BUILD_NUMBER}
+                            """
+                        )
+                        echo "📧 Email sent successfully to: ${emailTo}"
+                    } catch (Exception e) {
+                        echo "❌ Email failed: ${e.message}"
+                        echo "Stack trace: ${e}"
                     }
                 }
             }

@@ -143,10 +143,7 @@ pipeline {
                                 </html>
                             """,
                             to: params.NOTIFICATION_EMAIL,
-                            mimeType: 'text/html',
-                            recipientProviders: [[$class: 'DevelopersRecipientProvider']],
-                            replyTo: '$DEFAULT_REPLYTO',
-                            from: 'jenkins@yourdomain.com'  // Change this to your Jenkins email
+                            mimeType: 'text/html'
                         )
                         echo "📧 Email sent to: ${params.NOTIFICATION_EMAIL}"
                     } else {

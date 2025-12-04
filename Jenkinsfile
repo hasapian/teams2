@@ -24,20 +24,18 @@ pipeline {
                 echo "Checking next match for: ${params.TEAM_NAME}"
                 echo "Current date: ${new Date()}"
                 
-                // Verify Node.js is available and install dependencies
+                // Verify Node.js is available
                 sh 'node --version'
-                sh 'npm --version'
-                sh 'npm cache clean --force'
-                sh 'npm install --no-audit --no-fund'
+                sh 'npx --version'
             }
         }
         
         stage('Check Next Match') {
             steps {
                 script {
-                    // Run the check script
+                    // Run the check script using npx to auto-install dependencies
                     def exitCode = sh(
-                        script: "node scripts/check-next-match.js '${params.TEAM_NAME}'",
+                        script: "npx --yes -p node-fetch@2.7.0 -p cheerio@1.0.0-rc.12 node scripts/check-next-match.js '${params.TEAM_NAME}'",
                         returnStatus: true
                     )
                     

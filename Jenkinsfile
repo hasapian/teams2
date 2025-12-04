@@ -27,15 +27,41 @@ pipeline {
                 // Verify Node.js is available
                 sh 'node --version'
                 sh 'npx --version'
+                
+                // Manual dependency setup to avoid npm bug
+                sh '''
+                    mkdir -p node_modules
+                    cd node_modules
+                    
+                    # Download and extract packages manually if not present
+                    if [ ! -d "node-fetch" ]; then
+                        wget -q https://registry.npmjs.org/node-fetch/-/node-fetch-2.7.0.tgz
+                        tar -xzf node-fetch-2.7.0.tgz
+                        mv package node-fetch
+                        rm node-fetch-2.7.0.tgz
+                    fi
+                    
+                    if [ ! -d "cheerio" ]; then
+                        wget -q https://registry.npmjs.org/cheerio/-/cheerio-1.0.0-rc.12.tgz
+                        tar -xzf cheerio-1.0.0-rc.12.tgz
+                        mv package cheerio
+                        rm cheerio-1.0.0-rc.12.tgz
+                        
+                        # Install cheerio dependencies
+                        cd cheerio
+                        npm install --production --no-save 2>/dev/null || true
+                        cd ..
+                    fi
+                '''
             }
         }
         
         stage('Check Next Match') {
             steps {
                 script {
-                    // Run the check script using npx to auto-install dependencies
+                    // Run the check script
                     def exitCode = sh(
-                        script: "npx --yes -p node-fetch@2.7.0 -p cheerio@1.0.0-rc.12 node scripts/check-next-match.js '${params.TEAM_NAME}'",
+                        script: "node scripts/check-next-match.js '${params.TEAM_NAME}'",
                         returnStatus: true
                     )
                     

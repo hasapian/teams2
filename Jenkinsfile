@@ -26,32 +26,13 @@ pipeline {
                 
                 // Verify Node.js is available
                 sh 'node --version'
-                sh 'npx --version'
+                sh 'npm --version'
                 
-                // Manual dependency setup to avoid npm bug
+                // Configure npm for proxy and install dependencies
                 sh '''
-                    mkdir -p node_modules
-                    cd node_modules
-                    
-                    # Download and extract packages manually if not present
-                    if [ ! -d "node-fetch" ]; then
-                        wget -q https://registry.npmjs.org/node-fetch/-/node-fetch-2.7.0.tgz
-                        tar -xzf node-fetch-2.7.0.tgz
-                        mv package node-fetch
-                        rm node-fetch-2.7.0.tgz
-                    fi
-                    
-                    if [ ! -d "cheerio" ]; then
-                        wget -q https://registry.npmjs.org/cheerio/-/cheerio-1.0.0-rc.12.tgz
-                        tar -xzf cheerio-1.0.0-rc.12.tgz
-                        mv package cheerio
-                        rm cheerio-1.0.0-rc.12.tgz
-                        
-                        # Install cheerio dependencies
-                        cd cheerio
-                        npm install --production --no-save 2>/dev/null || true
-                        cd ..
-                    fi
+                    npm config set strict-ssl false
+                    npm config set registry https://registry.npmjs.org/
+                    npm install --no-audit --no-fund
                 '''
             }
         }

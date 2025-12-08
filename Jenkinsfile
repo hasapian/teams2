@@ -9,7 +9,7 @@ pipeline {
     }
     
     parameters {
-        string(name: 'TEAM_NAME', defaultValue: 'Volos', description: 'Name of the team to check')
+        string(name: 'TEAM_NAME', defaultValue: 'Volos', description: 'Team names to check (comma-separated for multiple teams, e.g., "Fulham, Udinese")')
         string(name: 'NOTIFICATION_EMAIL', defaultValue: '', description: 'Email address for notifications (optional)')
     }
     
@@ -41,30 +41,45 @@ pipeline {
         stage('Check Next Match') {
             steps {
                 script {
-                    // Run the check script
-                    def exitCode = sh(
-                        script: "node scripts/check-next-match.js '${params.TEAM_NAME}'",
-                        returnStatus: true
-                    )
+                    // Parse comma-separated teams
+                    def teams = params.TEAM_NAME.split(',').collect { it.trim() }
+                    echo "Checking ${teams.size()} team(s): ${teams.join(', ')}"
                     
-                    echo "Script exit code: ${exitCode}"
+                    env.SEND_NOTIFICATION = 'false'
+                    def matchesTomorrow = []
                     
-                    // Handle different exit codes
-                    if (exitCode == 0) {
-                        // Match tomorrow - send notification
-                        env.SEND_NOTIFICATION = 'true'
-                        echo "✅ Match found tomorrow - notification will be sent"
-                    } else if (exitCode == 1) {
-                        // Match found but not tomorrow
-                        env.SEND_NOTIFICATION = 'false'
-                        echo "ℹ️ Match found but not tomorrow - no notification needed"
-                    } else if (exitCode == 2) {
-                        // No match found
-                        env.SEND_NOTIFICATION = 'false'
-                        echo "⚠️ No upcoming match found"
+                    // Check each team
+                    teams.each { team ->
+                        echo "\n--- Checking team: ${team} ---"
+                        def exitCode = sh(
+                            script: "node scripts/check-next-match.js '${team}'",
+                            returnStatus: true
+                        )
+                        
+                        echo "Script exit code for ${team}: ${exitCode}"
+                        
+                        // Handle different exit codes
+                        if (exitCode == 0) {
+                            // Match tomorrow - add to list
+                            matchesTomorrow.add(team)
+                            env.SEND_NOTIFICATION = 'true'
+                            echo "✅ ${team}: Match found tomorrow"
+                        } else if (exitCode == 1) {
+                            echo "ℹ️ ${team}: Match found but not tomorrow"
+                        } else if (exitCode == 2) {
+                            echo "⚠️ ${team}: No upcoming match found"
+                        } else {
+                            echo "❌ ${team}: Script failed with exit code ${exitCode}"
+                        }
+                    }
+                    
+                    // Store teams with matches tomorrow for notification
+                    env.TEAMS_WITH_MATCHES = matchesTomorrow.join(', ')
+                    
+                    if (matchesTomorrow.size() > 0) {
+                        echo "\n🔔 Total teams with matches tomorrow: ${matchesTomorrow.join(', ')}"
                     } else {
-                        // Error
-                        error "Script failed with exit code ${exitCode}"
+                        echo "\nℹ️ No teams have matches tomorrow"
                     }
                 }
             }
@@ -78,59 +93,28 @@ pipeline {
                 script {
                     echo "🔔 Sending notification for match tomorrow!"
                     
-                    // Capture match details from console output
-                    def consoleLog = currentBuild.rawBuild.getLog(100).join('\n')
-                    
-                    // Extract match details using find() to avoid non-serializable Matcher
-                    def matchDetails = 'See build log'
-                    def matchDate = ''
-                    def matchTime = ''
-                    
-                    def matchMatch = (consoleLog =~ /Match:\s+(.+)/)
-                    if (matchMatch.find()) {
-                        matchDetails = matchMatch.group(1)
-                    }
-                    matchMatch = null
-                    
-                    def dateMatch = (consoleLog =~ /Date:\s+(.+)/)
-                    if (dateMatch.find()) {
-                        matchDate = dateMatch.group(1)
-                    }
-                    dateMatch = null
-                    
-                    def timeMatch = (consoleLog =~ /Time:\s+(.+)/)
-                    if (timeMatch.find()) {
-                        matchTime = timeMatch.group(1)
-                    }
-                    timeMatch = null
-                    
                     // Set default email if not provided
                     def emailTo = params.NOTIFICATION_EMAIL ?: 'spiderman8787@gmail.com'
+                    def teamsWithMatches = env.TEAMS_WITH_MATCHES
                     
                     echo "Preparing to send email..."
                     echo "To: ${emailTo}"
-                    echo "Subject: ⚽ Match Alert: ${params.TEAM_NAME} plays tomorrow!"
-                    echo "Match Details: ${matchDetails}"
-                    echo "Date: ${matchDate}, Time: ${matchTime}"
+                    echo "Teams with matches tomorrow: ${teamsWithMatches}"
                     
                     try {
                         mail (
                             to: emailTo,
-                            subject: "⚽ Match Alert: ${params.TEAM_NAME} plays tomorrow!",
+                            subject: "⚽ Match Alert: ${teamsWithMatches} - Matches Tomorrow!",
                             body: """
-                            Match Tomorrow!
+Match Alert - Tomorrow's Matches!
 
-                            Your team ${params.TEAM_NAME} has a match tomorrow.
+The following team(s) have matches tomorrow:
+${teamsWithMatches}
 
-                            Match Details:
-                            Teams: ${matchDetails}
-                            Date: ${matchDate}
-                            Time: ${matchTime}
+View full details and match information: ${BUILD_URL}console
 
-                            View full details: ${BUILD_URL}console
-
-                            This is an automated notification from your match tracking system.
-                            Build #${BUILD_NUMBER}
+This is an automated notification from your match tracking system.
+Build #${BUILD_NUMBER}
                             """
                         )
                         echo "📧 Email sent successfully to: ${emailTo}"

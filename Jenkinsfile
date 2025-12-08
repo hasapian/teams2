@@ -10,12 +10,12 @@ pipeline {
     
     parameters {
         string(name: 'TEAM_NAME', defaultValue: 'Volos', description: 'Team names to check (comma-separated for multiple teams, e.g., "Fulham, Udinese")')
-        string(name: 'NOTIFICATION_EMAIL', defaultValue: '', description: 'Email address for notifications (optional)')
+        string(name: 'NOTIFICATION_EMAIL', defaultValue: 'spiderman8787@gmail.com', description: 'Email address for notifications (optional)')
     }
     
     triggers {
         // Run every day at 10:00 AM
-        cron('0 10 * * *')
+        cron('H 10 * * *')
     }
     
     stages {

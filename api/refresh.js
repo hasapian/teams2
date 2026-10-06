@@ -20,7 +20,7 @@ async function scrapeLeagueData(url, leagueName, country, season) {
     const mainTable = $('label[for="LTAB_1"]').next('div').find('#btable');
     
     if (mainTable.length === 0) {
-      console.error('Could not find table with label LTAB_1');
+      console.error('Could not find table with label LTAB_1 from refresh');
       return { league: { name: leagueName, country: country, season: season, url: url }, teams: [] };
     }
     

@@ -16,8 +16,8 @@ async function scrapeLeagueData(url, leagueName, country, season) {
     const $ = cheerio.load(body);
     
     let teams = [];
-    
-    const mainTable = $('label[for="LTAB_1"]').next('div').find('#btable');
+        
+    const mainTable = $('#btable:has(span[title="Points"])');
     
     if (mainTable.length === 0) {
       console.error('Could not find table with label LTAB_1 from teams.js');
